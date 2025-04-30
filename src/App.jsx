@@ -19,7 +19,7 @@ const models = [
     name: "model 1",
     glassessFrames: "glassesFrames.json",
     glassessLenses: "glassesLenses.json",
-    path: "http://localhost:5173/glassesObj/glasses.obj",
+    path: "/glassesObj/glasses.obj",
     img: "/glassesImg/1.png",
   },
   {
@@ -27,7 +27,7 @@ const models = [
     name: "model 2",
     glassessFrames: "gg_r_0.json",
     glassessLenses: "gg_r_1.json",
-    path: "http://localhost:5173/glassesObj/SunGlasses.obj",
+    path: "/glassesObj/SunGlasses.obj",
     img: "/glassesImg/2.png",
   },
 ];
