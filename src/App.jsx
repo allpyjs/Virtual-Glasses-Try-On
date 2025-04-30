@@ -30,6 +30,14 @@ const models = [
     path: "/glassesObj/SunGlasses.obj",
     img: "/glassesImg/2.png",
   },
+  {
+    id: 3,
+    name: "model 2",
+    glassessFrames: "gg_r_0.json",
+    glassessLenses: "gg_r_1.json",
+    path: "/glassesObj/leopard.glb",
+    img: "/glassesImg/2.png",
+  },
 ];
 
 function App() {
