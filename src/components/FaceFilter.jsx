@@ -107,6 +107,7 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
       <canvas
         id="jeeFaceFilterCanvas"
         className="w-[800px] h-[600px]"
+        style={{ transform: "scaleX(-1)"}}
         ref={canvasRef}
       />
       {!isFaceDetected && (
