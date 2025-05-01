@@ -8,7 +8,7 @@ const PdModal = ({ openModal, pd, setOpenModal, setPd }) => {
   return (
     <div
       className={clsx(
-        "absolute w-1/2 mx-auto bottom-0 left-0 right-0 rounded-t-2xl bg-white",
+        "absolute w-full md:w-1/2 mx-auto bottom-0 left-0 right-0 rounded-t-2xl bg-white",
         { hidden: !openModal }
       )}
     >
@@ -26,7 +26,7 @@ const PdModal = ({ openModal, pd, setOpenModal, setPd }) => {
             <path d="M312.1 375c9.369 9.369 9.369 24.57 0 33.94s-24.57 9.369-33.94 0L160 289.9l-119 119c-9.369 9.369-24.57 9.369-33.94 0s-9.369-24.57 0-33.94L126.1 256L7.027 136.1c-9.369-9.369-9.369-24.57 0-33.94s24.57-9.369 33.94 0L160 222.1l119-119c9.369-9.369 24.57-9.369 33.94 0s9.369 24.57 0 33.94L193.9 256L312.1 375z"></path>
           </svg>
         </button>
-        <div className="flex justify-center items-center h-[70px] text-lg font-bold">
+        <div className="flex justify-center items-center h-[70px] text-lg font-bold px-12">
           Set your pupillary distance
         </div>
       </div>
@@ -49,7 +49,7 @@ const PdModal = ({ openModal, pd, setOpenModal, setPd }) => {
         </div>
         <div className="rounded-2xl overflow-hidden mt-3">
           <div
-            className="cursor-pointer bg-gray-200 text-center font-bold px-8 py-3 relative"
+            className="cursor-pointer bg-gray-200 text-center font-bold px-12 py-3 relative"
             onClick={() => setCollapsed((prev) => !prev)}
           >
             How to measure PD yourself?
