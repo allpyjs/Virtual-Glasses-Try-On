@@ -100,19 +100,19 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
   useEffect(() => {
     load_glasses_model();
   }, [model, distance]);
-  // useEffect(() => {
-  //   const fitScreen = () => {
-  //     const screenHeight = window.screen.availHeight;
-  //     const width = window.screen.availWidth;
-  //     const height = width > 1024 ? 600 : screenHeight * 0.8;
-  //     canvasRef.current.style.height = `${height}px`;
-  //   }
-  //   fitScreen();
-  //   window.addEventListener('resize', fitScreen);
-  //   return () => {
-  //     window.removeEventListener('resize', fitScreen);
-  //   }
-  // }, [canvasRef.current, window.screen]);
+  useEffect(() => {
+    const fitScreen = () => {
+      const screenHeight = window.screen.availHeight;
+      const width = window.screen.availWidth;
+      const height = width > 1024 ? 600 : screenHeight * 0.8;
+      canvasRef.current.style.height = `${height}px`;
+    }
+    fitScreen();
+    window.addEventListener('resize', fitScreen);
+    return () => {
+      window.removeEventListener('resize', fitScreen);
+    }
+  }, [canvasRef.current, window.screen]);
 
   return (
     <>

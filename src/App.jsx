@@ -1,6 +1,11 @@
 import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
-import { FaceMesh } from "@mediapipe/face_mesh";
+import {
+  FaceMesh,
+  FACEMESH_RIGHT_IRIS,
+  FACEMESH_LEFT_IRIS,
+} from "@mediapipe/face_mesh";
+import { Camera } from "@mediapipe/camera_utils";
 
 import "./App.css";
 import FaceFilter from "./components/FaceFilter";
@@ -79,6 +84,13 @@ function App() {
     }
   }, [downloadLink]);
   useEffect(() => {
+    const getDistance = (p1, p2) => {
+      return Math.sqrt(
+        Math.pow(p1.x - p2.x, 2) +
+          Math.pow(p1.y - p2.y, 2) +
+          Math.pow(p1.z - p2.z, 2)
+      );
+    };
     const onResults = (results) => {
       if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
         const pupils = {
@@ -125,7 +137,6 @@ function App() {
         const irisWidthInMM = 12.0;
         const pupilWidth = Math.min(pupils.left.width, pupils.right.width);
         const pd = (irisWidthInMM / pupilWidth) * distance;
-        console.log(pd);
         setPd(Number(pd.toFixed(0)) || 60);
       }
     };
@@ -141,21 +152,31 @@ function App() {
       minTrackingConfidence: 0.5,
     });
     faceMesh.onResults(onResults);
-    navigator.mediaDevices
-      .getUserMedia({ video: { width: 1280, height: 720 } })
-      .then((mediaStream) => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          videoRef.current.onloadedmetadata = () => {
+    let sendFlag = true;  // Flag for sending frame
+    const flagInterval = setInterval(() => {
+      sendFlag = !sendFlag; // Reset the flag
+    }, 1000);
+    if (videoRef.current) {
+      const camera = new Camera(videoRef.current, {
+        onFrame: async () => {
+          if (sendFlag) {
             faceMesh.send({ image: videoRef.current });
-            videoRef.current.play();
-          };
-        }
-      })
-      .catch((err) => {
-        console.error(err.name + ": " + err.message);
+            sendFlag = false; // Set flag to false not to send frame for 1 second
+          }
+        },
       });
+      camera.start();
+    }
+    return () => {
+      clearInterval(flagInterval);
+      if (faceMesh) {
+        faceMesh.close();
+      }
+    };
   }, []);
+  useEffect(() => {
+    console.log(pd);
+  }, [pd]);
 
   return (
     <div className="relative flex flex-col items-center justify-center h-4/5 w-full lg:w-[800px] lg:h-[600px]">
@@ -340,7 +361,7 @@ function App() {
           </div>
         )}
       </div>
-      <video className="hidden" ref={videoRef} />
+      <video className="hidden" ref={videoRef} playsInline />
       <PdModal
         openModal={showPdModal}
         pd={pd}
