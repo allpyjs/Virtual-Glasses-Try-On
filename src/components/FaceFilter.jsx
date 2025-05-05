@@ -1,5 +1,5 @@
 // src/components/FaceFilter.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import faceLineSvg from "/faceline.svg";
 
@@ -7,13 +7,13 @@ import faceLineSvg from "/faceline.svg";
 
 let THREECAMERA = null;
 
-const FaceFilter = ({ model, canvasRef, distance }) => {
-  const threeStuffsRef = useRef(null)
-  const initialFaceObjectRef = useRef(null)
-  const [isFaceDetected, setIsFaceDetected]= useState(false)
+const FaceFilter = ({ model, canvasRef, distance, isModalShown }) => {
+  const threeStuffsRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isFaceDetected, setIsFaceDetected] = useState(false);
 
   function detect_callback(faceIndex, isDetected) {
-    setIsFaceDetected(isDetected)
+    setIsFaceDetected(isDetected);
     console.log(
       `INFO in detect_callback(): ${isDetected ? "DETECTED" : "LOST"}`
     );
@@ -24,15 +24,15 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
     threeStuffs.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     threeStuffs.renderer.outputEncoding = THREE.sRGBEncoding;
 
-    threeStuffsRef.current = threeStuffs
+    threeStuffsRef.current = threeStuffs;
 
-    load_glasses_model()
+    load_glasses_model();
 
     THREECAMERA = JeelizThreeHelper.create_camera();
   }
 
   function load_glasses_model() {
-    if (!threeStuffsRef.current) return
+    if (!threeStuffsRef.current) return;
 
     const r = JeelizThreeGlassesCreator({
       envMapURL: "envMap.jpg",
@@ -41,7 +41,7 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
       occluderURL: "models3D/face.json",
     });
 
-    threeStuffsRef.current.faceObject.children = []
+    threeStuffsRef.current.faceObject.children = [];
 
     const dy = 0.07;
 
@@ -91,29 +91,53 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
   }
 
   function destroy() {
-    if (!threeStuffsRef.current) return
+    if (!threeStuffsRef.current) return;
   }
 
   useEffect(() => {
-    loader()
-  }, [])
-
+    loader();
+  }, []);
   useEffect(() => {
-    load_glasses_model()
-  }, [model, distance])
+    load_glasses_model();
+  }, [model, distance]);
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const fitScreen = async () => {
+      const display = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+      const settings = display.getVideoTracks()[0].getSettings();
+      const aspectRatio = settings.aspectRatio || 1.333;
+      const height = containerRef.current.offsetHeight;
+      canvasRef.current.style.height = `${height}px`;
+      canvasRef.current.style.width = `${height * aspectRatio}px`;
+      canvasRef.current.width = (canvasRef.current.height * aspectRatio).toFixed(0);
+    };
+    fitScreen();
+    window.addEventListener("resize", fitScreen);
+    return () => {
+      window.removeEventListener("resize", fitScreen);
+    };
+  }, [canvasRef.current, window.screen]);
 
   return (
     <>
-      <canvas
-        id="jeeFaceFilterCanvas"
-        className="w-[800px] h-[600px]"
-        style={{ transform: "scaleX(-1)"}}
-        ref={canvasRef}
-      />
+      <div
+        className="overflow-x-auto lg:overflow-hidden h-full flex items-center justify-center"
+        ref={containerRef}
+      >
+        <canvas
+          id="jeeFaceFilterCanvas"
+          className="h-full mx-auto"
+          style={{ transform: "scaleX(-1)" }}
+          ref={canvasRef}
+        />
+      </div>
       {!isFaceDetected && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 text-center overflow-hidden">
-          <img src={faceLineSvg} alt="" className="scale-150 mt-20" />
-        </div>
+        <div
+          className="absolute top-0 left-0 right-0 bottom-0 text-center overflow-hidden bg-cover bg-center"
+          style={{ backgroundImage: "url(/faceline.svg)" }}
+        />
       )}
     </>
   );

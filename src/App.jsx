@@ -1,7 +1,12 @@
 import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import {
+  FaceMesh,
+  FACEMESH_RIGHT_IRIS,
+  FACEMESH_LEFT_IRIS,
+} from "@mediapipe/face_mesh";
+import { Camera } from "@mediapipe/camera_utils";
+
 import "./App.css";
 import FaceFilter from "./components/FaceFilter";
 import LiveViewer from "./components/LiveViewer";
@@ -46,9 +51,11 @@ function App() {
   // const [imageData, setImageData] = useState();
   const [downloadLink, setDownloadLink] = useState();
   const [pd, setPd] = useState(60);
+  const [eyeDist, setEyeDist] = useState();
   const [showPdModal, setShowPdModal] = useState(false);
 
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
 
   function selectModel(model) {
     setSelectedModel(model);
@@ -77,25 +84,117 @@ function App() {
       setShowPdModal(false);
     }
   }, [downloadLink]);
+  useEffect(() => {
+    const getDistance = (p1, p2) => {
+      return Math.sqrt(
+        Math.pow(p1.x - p2.x, 2) +
+          Math.pow(p1.y - p2.y, 2) +
+          Math.pow(p1.z - p2.z, 2)
+      );
+    };
+    const onResults = (results) => {
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
+        const pupils = {
+          left: {
+            x:
+              (results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[0][0]].x +
+                results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[2][0]].x) /
+              2.0,
+            y:
+              (results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[0][0]].y +
+                results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[2][0]].y) /
+              2.0,
+            z:
+              (results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[0][0]].z +
+                results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[2][0]].z) /
+              2.0,
+            width: getDistance(
+              results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[0][0]],
+              results.multiFaceLandmarks[0][FACEMESH_LEFT_IRIS[2][0]]
+            ),
+          },
+          right: {
+            x:
+              (results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[0][0]].x +
+                results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[2][0]].x) /
+              2.0,
+            y:
+              (results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[0][0]].y +
+                results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[2][0]].y) /
+              2.0,
+            z:
+              (results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[0][0]].z +
+                results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[2][0]].z) /
+              2.0,
+            width: getDistance(
+              results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[0][0]],
+              results.multiFaceLandmarks[0][FACEMESH_RIGHT_IRIS[2][0]]
+            ),
+          },
+        };
+
+        // Setting variables for calculation disance between pupils
+        const distance = getDistance(pupils.left, pupils.right);
+        const irisWidthInMM = 12.0;
+        const pupilWidth = Math.min(pupils.left.width, pupils.right.width);
+        const pd = (irisWidthInMM / pupilWidth) * distance;
+        setEyeDist(Number(pd.toFixed(0)) || 60);
+      }
+    };
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+      },
+    });
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    faceMesh.onResults(onResults);
+    let sendFlag = true;  // Flag for sending frame
+    const flagInterval = setInterval(() => {
+      sendFlag = !sendFlag; // Reset the flag
+    }, 1000);
+    if (videoRef.current) {
+      const camera = new Camera(videoRef.current, {
+        onFrame: async () => {
+          if (sendFlag) {
+            faceMesh.send({ image: videoRef.current });
+            sendFlag = false; // Set flag to false not to send frame for 1 second
+          }
+        },
+      });
+      camera.start();
+    }
+    return () => {
+      clearInterval(flagInterval);
+      if (faceMesh) {
+        faceMesh.close();
+      }
+    };
+  }, []);
+  useEffect(() => {
+    console.log(pd);
+  }, [pd]);
 
   return (
-    <div className="relative">
-      <h2>Vladyslav Virtual Glasses Try On </h2>
-      <div className="relative w-[800px] h-[600px] overflow-hidden rounded-3xl">
-        <div
-          style={{ visibility: isLive ? "visible" : "hidden" }}
-          className="absolute"
-        >
-          <FaceFilter model={selectedModel} canvasRef={canvasRef} distance={pd} />
-        </div>
-        <div
-          style={{ display: !isLive ? "block" : "none" }}
-          className="absolute"
-        >
-          <div className="w-[800px] h-[600px] bg-neutral-300">
+    <div className="relative flex flex-col items-center justify-center h-4/5 w-full lg:w-[800px] lg:h-[600px]">
+      {/* <h2>Vladyslav Virtual Glasses Try On </h2> */}
+      <div className="relative flex justify-center items-center h-full w-full overflow-hidden rounded-3xl">
+        {isLive ? (
+          <FaceFilter
+            model={selectedModel}
+            canvasRef={canvasRef}
+            distance={pd}
+            isModalShown={showPdModal}
+          />
+        ) : (
+          <div className="w-full h-full bg-neutral-300 flex justify-center items-center">
             <LiveViewer model={selectedModel} />
           </div>
-        </div>
+        )}
       </div>
 
       <div className="absolute right-2 top-0 h-full">
@@ -168,7 +267,9 @@ function App() {
             onClick={() => setShowPdModal(true)}
             style={{ visibility: isLive ? "visible" : "hidden" }}
           >
-            <div>PD</div>
+            <div className="flex flex-col">PD
+              <span className="text-xs">{eyeDist}</span>
+            </div>
             <div className="absolute right-full mr-3 my-auto top-0 bottom-0 text-nowrap label">
               Pupillary distance
             </div>
@@ -181,7 +282,7 @@ function App() {
           {models.map((model) => (
             <div
               className={clsx(
-                "bg-gray-200 h-[60px] w-[100px] cursor-pointer rounded-lg overflow-hidden relative"
+                "bg-gray-200 h-8 w-12 md:h-[60px] md:w-[100px] cursor-pointer rounded-lg overflow-hidden relative"
               )}
               key={model.id}
               onClick={() => selectModel(model)}
@@ -196,7 +297,7 @@ function App() {
       </div>
       <div
         className={clsx(
-          "absolute w-1/2 mx-auto bottom-0 left-0 right-0 rounded-t-2xl bg-white",
+          "absolute w-full md:w-1/2 mx-auto bottom-0 left-0 right-0 rounded-t-2xl bg-white",
           { hidden: !downloadLink }
         )}
       >
@@ -264,9 +365,11 @@ function App() {
           </div>
         )}
       </div>
+      <video className="hidden" ref={videoRef} playsInline />
       <PdModal
         openModal={showPdModal}
         pd={pd}
+        eyeDist={eyeDist}
         setOpenModal={setShowPdModal}
         setPd={setPd}
       />
