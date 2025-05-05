@@ -7,9 +7,9 @@ import faceLineSvg from "/faceline.svg";
 
 let THREECAMERA = null;
 
-const FaceFilter = ({ model, canvasRef, distance }) => {
+const FaceFilter = ({ model, canvasRef, distance, isModalShown }) => {
   const threeStuffsRef = useRef(null);
-  const initialFaceObjectRef = useRef(null);
+  const containerRef = useRef(null);
   const [isFaceDetected, setIsFaceDetected] = useState(false);
 
   function detect_callback(faceIndex, isDetected) {
@@ -101,25 +101,34 @@ const FaceFilter = ({ model, canvasRef, distance }) => {
     load_glasses_model();
   }, [model, distance]);
   useEffect(() => {
-    const fitScreen = () => {
-      const screenHeight = window.screen.availHeight;
-      const width = window.screen.availWidth;
-      const height = width > 1024 ? 600 : screenHeight * 0.8;
+    if (!containerRef.current) return;
+    const fitScreen = async () => {
+      const display = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+      const settings = display.getVideoTracks()[0].getSettings();
+      const aspectRatio = settings.aspectRatio || 1.333;
+      const height = containerRef.current.offsetHeight;
       canvasRef.current.style.height = `${height}px`;
-    }
+      canvasRef.current.style.width = `${height * aspectRatio}px`;
+      canvasRef.current.width = (canvasRef.current.height * aspectRatio).toFixed(0);
+    };
     fitScreen();
-    window.addEventListener('resize', fitScreen);
+    window.addEventListener("resize", fitScreen);
     return () => {
-      window.removeEventListener('resize', fitScreen);
-    }
+      window.removeEventListener("resize", fitScreen);
+    };
   }, [canvasRef.current, window.screen]);
 
   return (
     <>
-      <div className="overflow-x-auto lg:overflow-hidden h-full flex items-center justify-center">
+      <div
+        className="overflow-x-auto lg:overflow-hidden h-full flex items-center justify-center"
+        ref={containerRef}
+      >
         <canvas
           id="jeeFaceFilterCanvas"
-          className="h-1/2 mx-auto"
+          className="h-full mx-auto"
           style={{ transform: "scaleX(-1)" }}
           ref={canvasRef}
         />

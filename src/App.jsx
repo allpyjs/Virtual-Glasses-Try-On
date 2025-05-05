@@ -51,6 +51,7 @@ function App() {
   // const [imageData, setImageData] = useState();
   const [downloadLink, setDownloadLink] = useState();
   const [pd, setPd] = useState(60);
+  const [eyeDist, setEyeDist] = useState();
   const [showPdModal, setShowPdModal] = useState(false);
 
   const canvasRef = useRef(null);
@@ -137,7 +138,7 @@ function App() {
         const irisWidthInMM = 12.0;
         const pupilWidth = Math.min(pupils.left.width, pupils.right.width);
         const pd = (irisWidthInMM / pupilWidth) * distance;
-        setPd(Number(pd.toFixed(0)) || 60);
+        setEyeDist(Number(pd.toFixed(0)) || 60);
       }
     };
     const faceMesh = new FaceMesh({
@@ -187,6 +188,7 @@ function App() {
             model={selectedModel}
             canvasRef={canvasRef}
             distance={pd}
+            isModalShown={showPdModal}
           />
         ) : (
           <div className="w-full h-full bg-neutral-300 flex justify-center items-center">
@@ -265,7 +267,9 @@ function App() {
             onClick={() => setShowPdModal(true)}
             style={{ visibility: isLive ? "visible" : "hidden" }}
           >
-            <div>PD</div>
+            <div className="flex flex-col">PD
+              <span className="text-xs">{eyeDist}</span>
+            </div>
             <div className="absolute right-full mr-3 my-auto top-0 bottom-0 text-nowrap label">
               Pupillary distance
             </div>
@@ -365,6 +369,7 @@ function App() {
       <PdModal
         openModal={showPdModal}
         pd={pd}
+        eyeDist={eyeDist}
         setOpenModal={setShowPdModal}
         setPd={setPd}
       />

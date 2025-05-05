@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React, { useState } from "react";
 import pdMeasureSvg from "/pdMeasure.svg";
 
-const PdModal = ({ openModal, pd, setOpenModal, setPd }) => {
+const PdModal = ({ openModal, pd, setOpenModal, setPd, eyeDist }) => {
   const [collapsed, setCollapsed] = useState(true);
 
   return (
