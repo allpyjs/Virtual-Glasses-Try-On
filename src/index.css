@@ -54,3 +54,18 @@ h1 {
     color: #747bff;
   }
 }
+
+@theme {
+  --animate-hidden: hidden 2s ease-in-out infinite;
+
+  @keyframes hidden {
+    0%, 100% {
+      width: 0;
+      height: 0;
+    }
+    50% {
+      width: 6px;
+      height: 6px;
+    }
+  }
+}
