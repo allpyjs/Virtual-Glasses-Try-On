@@ -7,13 +7,16 @@ import faceLineSvg from "/faceline.svg";
 
 let THREECAMERA = null;
 
-const FaceFilter = ({ model, canvasRef, distance, isModalShown }) => {
+const FaceFilter = ({ model, canvasRef, distance, isModalShown, setEyeDist }) => {
   const threeStuffsRef = useRef(null);
   const containerRef = useRef(null);
   const [isFaceDetected, setIsFaceDetected] = useState(false);
 
   function detect_callback(faceIndex, isDetected) {
     setIsFaceDetected(isDetected);
+    if (!isDetected) {
+      setEyeDist(undefined)
+    }
     console.log(
       `INFO in detect_callback(): ${isDetected ? "DETECTED" : "LOST"}`
     );

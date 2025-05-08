@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React, { useState } from "react";
 import pdMeasureSvg from "/pdMeasure.svg";
 
-const PdModal = ({ openModal, pd, setOpenModal, setPd, eyeDist }) => {
+const PdModal = ({ openModal, pd, setOpenModal, setPd, setEyeDist, isAutomaticMeasurePd, setIsAutomaticMeasurePd, setIsInitialValue }) => {
   const [collapsed, setCollapsed] = useState(true);
 
   return (
@@ -42,10 +42,27 @@ const PdModal = ({ openModal, pd, setOpenModal, setPd, eyeDist }) => {
               step={1}
               className="w-full"
               value={pd}
-              onChange={(e) => setPd(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = Number(e.target.value || 0);
+                setPd(value);
+                setEyeDist(value);
+                setIsAutomaticMeasurePd(false);
+                setIsInitialValue(true);
+              }}
             />
           </div>
           <div>75</div>
+        </div>
+        <div className="my-2">
+          <button
+            className={clsx(
+              "rounded-full cursor-pointer w-full px-3 py-2 text-white transition-all duration-300",
+              isAutomaticMeasurePd ? 'bg-red-600 hover:bg-red-700' : 'bg-sky-600 hover:bg-sky-700'
+            )}
+            onClick={() => setIsAutomaticMeasurePd(prev => !prev)}
+          >
+            {isAutomaticMeasurePd ? 'Stop' : 'Start'} automatic PD measurement
+          </button>
         </div>
         <div className="rounded-2xl overflow-hidden mt-3">
           <div

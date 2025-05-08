@@ -53,9 +53,12 @@ function App() {
   const [pd, setPd] = useState(60);
   const [eyeDist, setEyeDist] = useState();
   const [showPdModal, setShowPdModal] = useState(false);
+  const [isAutomaticMeasurePd, setIsAutomaticMeasurePd] = useState(false);
+  const [isInitialValue, setIsInitialValue] = useState(true);
 
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const faceMeshRef = useRef(null);
 
   function selectModel(model) {
     setSelectedModel(model);
@@ -153,30 +156,35 @@ function App() {
       minTrackingConfidence: 0.5,
     });
     faceMesh.onResults(onResults);
-    let sendFlag = true;  // Flag for sending frame
+    faceMeshRef.current = faceMesh;
+    return () => {
+      if (faceMesh) {
+        faceMesh.close();
+      }
+    }
+  }, []);
+  useEffect(() => {
+    let sendFlag = true; // Flag for sending frame
     const flagInterval = setInterval(() => {
       sendFlag = !sendFlag; // Reset the flag
     }, 1000);
-    if (videoRef.current) {
+    if (videoRef.current && faceMeshRef.current) {
       const camera = new Camera(videoRef.current, {
         onFrame: async () => {
-          if (sendFlag) {
-            faceMesh.send({ image: videoRef.current });
-            sendFlag = false; // Set flag to false not to send frame for 1 second
+          if (sendFlag && (!eyeDist || isAutomaticMeasurePd)) {
+            faceMeshRef.current.send({ image: videoRef.current });
           }
+          sendFlag = false; // Set flag to false not to send frame for 1 second
         },
       });
       camera.start();
     }
     return () => {
       clearInterval(flagInterval);
-      if (faceMesh) {
-        faceMesh.close();
-      }
     };
-  }, []);
+  }, [videoRef.current, faceMeshRef.current, eyeDist, isAutomaticMeasurePd]);
   useEffect(() => {
-    console.log(pd);
+    if (!isInitialValue) setEyeDist(pd);
   }, [pd]);
 
   return (
@@ -189,6 +197,7 @@ function App() {
             canvasRef={canvasRef}
             distance={pd}
             isModalShown={showPdModal}
+            setEyeDist={setEyeDist}
           />
         ) : (
           <div className="w-full h-full bg-neutral-300 flex justify-center items-center">
@@ -267,8 +276,17 @@ function App() {
             onClick={() => setShowPdModal(true)}
             style={{ visibility: isLive ? "visible" : "hidden" }}
           >
-            <div className="flex flex-col">PD
-              <span className="text-xs">{eyeDist}</span>
+            <div className="flex flex-col items-center text-xs">
+              PD
+              {!eyeDist ? (
+                <div className="flex items-center gap-0.5 h-1.5">
+                  <div className="bg-white rounded-full animate-hidden"></div>
+                  <div className="bg-white rounded-full animate-[hidden_2s_ease-in-out_infinite_200ms]"></div>
+                  <div className="bg-white rounded-full animate-[hidden_2s_ease-in-out_infinite_400ms]"></div>
+                </div>
+              ) : (
+                <div className="text-xs">{eyeDist}</div>
+              )}
             </div>
             <div className="absolute right-full mr-3 my-auto top-0 bottom-0 text-nowrap label">
               Pupillary distance
@@ -369,9 +387,12 @@ function App() {
       <PdModal
         openModal={showPdModal}
         pd={pd}
-        eyeDist={eyeDist}
+        isAutomaticMeasurePd={isAutomaticMeasurePd}
         setOpenModal={setShowPdModal}
         setPd={setPd}
+        setEyeDist={setEyeDist}
+        setIsAutomaticMeasurePd={setIsAutomaticMeasurePd}
+        setIsInitialValue={setIsInitialValue}
       />
     </div>
   );
